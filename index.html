@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>드래곤볼 파이터 - 2D 격투 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            background: #000;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        }
+
+        #gameUI {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .health-bar {
+            position: absolute;
+            top: 20px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #fff;
+            border-radius: 10px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000 0%, #ffff00 50%, #00ff00 100%);
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+
+        .ki-bar {
+            position: absolute;
+            top: 50px;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #fff;
+            border-radius: 8px;
+        }
+
+        .ki-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0066ff 0%, #00ccff 100%);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        #player1Health {
+            left: 20px;
+            width: 300px;
+        }
+
+        #player1Ki {
+            left: 20px;
+            width: 300px;
+        }
+
+        #player2Health {
+            right: 20px;
+            width: 300px;
+        }
+
+        #player2Ki {
+            right: 20px;
+            width: 300px;
+        }
+
+        .character-name {
+            position: absolute;
+            top: -5px;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        #player1Health .character-name {
+            left: 0;
+        }
+
+        #player2Health .character-name {
+            right: 0;
+        }
+
+        #gameTitle {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffd700;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 12px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .control-group {
+            margin: 5px 0;
+        }
+
+        @keyframes powerAura {
+            0% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 50px rgba(255, 215, 0, 0.8); }
+            100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+        }
+
+        .power-up {
+            animation: powerAura 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1200" height="600"></canvas>
+        <div id="gameUI">
+            <div id="gameTitle">드래곤볼 파이터</div>
+
+            <!-- Player 1 UI -->
+            <div id="player1Health" class="health-bar">
+                <div class="character-name">고쿠</div>
+                <div class="health-fill" style="width: 100%;"></div>
+            </div>
+            <div id="player1Ki" class="ki-bar">
+                <div class="ki-fill" style="width: 0%;"></div>
+            </div>
+
+            <!-- Player 2 UI -->
+            <div id="player2Health" class="health-bar">
+                <div class="character-name">베지터</div>
+                <div class="health-fill" style="width: 100%;"></div>
+            </div>
+            <div id="player2Ki" class="ki-bar">
+                <div class="ki-fill" style="width: 0%;"></div>
+            </div>
+
+            <div id="controls">
+                <div class="control-group">
+                    <strong>Player 1:</strong> WASD - 이동, F - 펀치, G - 킥, H - 기 공격, Space - 가드
+                </div>
+                <div class="control-group">
+                    <strong>Player 2:</strong> 방향키 - 이동, 1 - 펀치, 2 - 킥, 3 - 기 공격, Enter - 가드
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/engine/core/Vector2.js"></script>
+    <script src="src/engine/core/GameObject.js"></script>
+    <script src="src/engine/core/AnimationSystem.js"></script>
+    <script src="src/engine/physics/CollisionDetection.js"></script>
+    <script src="src/engine/input/InputManager.js"></script>
+    <script src="src/engine/audio/AudioManager.js"></script>
+    <script src="src/engine/effects/ParticleSystem.js"></script>
+    <script src="src/game/characters/Character.js"></script>
+    <script src="src/game/characters/Goku.js"></script>
+    <script src="src/game/characters/Vegeta.js"></script>
+    <script src="src/game/attacks/Attack.js"></script>
+    <script src="src/game/attacks/KiBlast.js"></script>
+    <script src="src/game/attacks/SpecialAttack.js"></script>
+    <script src="src/game/systems/CombatSystem.js"></script>
+    <script src="src/game/systems/UISystem.js"></script>
+    <script src="src/game/GameEngine.js"></script>
+    <script src="src/main.js"></script>
+</body>
+</html>
